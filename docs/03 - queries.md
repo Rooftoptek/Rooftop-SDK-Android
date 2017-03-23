@@ -6,12 +6,12 @@ We've already seen how a `RTQuery` with `getInBackground` can retrieve a single 
 
 In many cases, `getInBackground` isn't powerful enough to specify which objects you want to retrieve. The `RTQuery` offers different ways to retrieve a list of objects rather than just a single object.
 
-The general pattern is to create a `RTQuery`, put conditions on it, and then retrieve a `List` of matching `RTObject`s using the `findInBackground` method with a `FindCallback`. For example, to retrieve scores with a particular `playerName`, use the `whereEqualTo` method to constrain the value for a key:
+The general pattern is to create a `RTQuery`, put conditions on it, and then retrieve a `List` of matching `RTObject`s using the `findInBackground` method with a `RTFindCallback`. For example, to retrieve scores with a particular `playerName`, use the `whereEqualTo` method to constrain the value for a key:
 
 ```java
 RTQuery<RTObject> query = RTQuery.getQuery("GameScore");
 query.whereEqualTo("playerName", "Dan Stemkoski");
-query.findInBackground(new FindCallback<RTObject>() {
+query.findInBackground(new RTFindCallback<RTObject>() {
     public void done(List<RTObject> scoreList, RTException e) {
         if (e == null) {
             Log.d("score", "Retrieved " + scoreList.size() + " scores");
@@ -45,12 +45,12 @@ You can limit the number of results with `setLimit`. By default, results are lim
 query.setLimit(10); // limit to at most 10 results
 ```
 
-If you want exactly one result, a more convenient alternative may be to use `getFirst` or `getFirstBackground` instead of using `find`.
+If you want exactly one result, a more convenient alternative may be to use `getFirst` or `getFirstInBackground` instead of using `find`.
 
 ```java
 RTQuery<RTObject> query = RTQuery.getQuery("GameScore");
 query.whereEqualTo("playerEmail", "dstemkoski@example.com");
-query.getFirstInBackground(new GetCallback<RTObject>() {
+query.getFirstInBackground(new RTGetCallback<RTObject>() {
   public void done(RTObject object, RTException e) {
     if (object == null) {
       Log.d("score", "The getFirst request failed.");
@@ -134,7 +134,7 @@ RTQuery<RTObject> teamQuery = RTQuery.getQuery("Team");
 teamQuery.whereGreaterThan("winPct", 0.5);
 RTQuery<RTUser> userQuery = RTUser.getQuery();
 userQuery.whereMatchesKeyInQuery("hometown", "city", teamQuery);
-userQuery.findInBackground(new FindCallback<RTUser>() {
+userQuery.findInBackground(new RTFindCallback<RTUser>() {
   void done(List<RTUser> results, RTException e) {
     // results has the list of users with a hometown team with a winning record
   }
@@ -146,7 +146,7 @@ Conversely, to get objects where a key does not match the value of a key in a se
 ```java
 RTQuery<RTUser> losingUserQuery = RTUser.getQuery();
 losingUserQuery.whereDoesNotMatchKeyInQuery("hometown", "city", teamQuery);
-losingUserQuery.findInBackground(new FindCallback<RTUser>() {
+losingUserQuery.findInBackground(new RTFindCallback<RTUser>() {
   void done(List<RTUser> results, RTException e) {
     // results has the list of users with a hometown team with a losing record
   }
@@ -165,7 +165,7 @@ The remaining fields can be fetched later by calling one of the `fetchIfNeeded` 
 
 ```java
 RTObject object = results.get(0);
-object.fetchIfNeededInBackground(new GetCallback<RTObject>() {
+object.fetchIfNeededInBackground(new RTGetCallback<RTObject>() {
   public void done(RTObject object, RTException e) {
     // all fields of the object will now be available here.
   }
@@ -216,7 +216,7 @@ There are several ways to issue queries for relational data. If you want to retr
 RTQuery<RTObject> query = RTQuery.getQuery("Comment");
 query.whereEqualTo("post", myPost);
 
-query.findInBackground(new FindCallback<RTObject>() {
+query.findInBackground(new RTFindCallback<RTObject>() {
   public void done(List<RTObject> commentList, RTException e) {
     // commentList now has the comments for myPost
   }
@@ -230,7 +230,7 @@ RTQuery<RTObject> innerQuery = RTQuery.getQuery("Post");
 innerQuery.whereExists("image");
 RTQuery<RTObject> query = RTQuery.getQuery("Comment");
 query.whereMatchesQuery("post", innerQuery);
-query.findInBackground(new FindCallback<RTObject>() {
+query.findInBackground(new RTFindCallback<RTObject>() {
   public void done(List<RTObject> commentList, RTException e) {
     // comments now contains the comments for posts with images.
   }
@@ -244,7 +244,7 @@ RTQuery<RTObject> innerQuery = RTQuery.getQuery("Post");
 innerQuery.whereExists("image");
 RTQuery<RTObject> query = RTQuery.getQuery("Comment");
 query.whereDoesNotMatchQuery("post", innerQuery);
-query.findInBackground(new FindCallback<RTObject>() {
+query.findInBackground(new RTFindCallback<RTObject>() {
   public void done(List<RTObject> commentList, RTException e) {
     // comments now contains the comments for posts without images.
   }
@@ -265,7 +265,7 @@ query.setLimit(10);
 // Include the post data with each comment
 query.include("post");
 
-query.findInBackground(new FindCallback<RTObject>() {
+query.findInBackground(new RTFindCallback<RTObject>() {
   public void done(List<RTObject> commentList, RTException e) {
     // commentList now contains the last ten comments, and the "post"
     // field has been populated. For example:
@@ -292,7 +292,7 @@ If you have enabled the local datastore by calling `Rooftop.enableLocalDatastore
 
 ```java
 query.fromLocalDatastore();
-query.findInBackground(new FindCallback<RTObject>() {
+query.findInBackground(new RTFindCallback<RTObject>() {
   public void done(final List<RTObject> scoreList, RTException e) {
     if (e == null) {
       // Results were successfully found from the local datastore.
@@ -313,7 +313,7 @@ It's often useful to cache the result of a query on a device. This lets you show
 final String TOP_SCORES_LABEL = "topScores";
 
 // Query for the latest objects from Rooftop.
-query.findInBackground(new FindCallback<RTObject>() {
+query.findInBackground(new RTFindCallback<RTObject>() {
   public void done(final List<RTObject> scoreList, RTException e) {
     if (e != null) {
       // There was an error or the network wasn't available.
@@ -342,7 +342,7 @@ If you aren't using the local datastore, you can use the per-query cache for `RT
 
 ```java
 query.setCachePolicy(RTQuery.CachePolicy.NETWORK_ELSE_CACHE);
-query.findInBackground(new FindCallback<RTObject>() {
+query.findInBackground(new RTFindCallback<RTObject>() {
   public void done(List<RTObject> scoreList, RTException e) {
     if (e == null) {
       // Results were successfully found, looking first on the
@@ -362,7 +362,7 @@ Rooftop provides several different cache policies:
 *   `NETWORK_ONLY`: The query does not load from the cache, but it will save results to the cache.
 *   `CACHE_ELSE_NETWORK`: The query first tries to load from the cache, but if that fails, it loads results from the network. If neither cache nor network succeed, there is a `RTException`.
 *   `NETWORK_ELSE_CACHE`: The query first tries to load from the network, but if that fails, it loads results from the cache. If neither network nor cache succeed, there is a `RTException`.
-*   `CACHE_THEN_NETWORK`: The query first loads from the cache, then loads from the network. In this case, the `FindCallback` will actually be called twice - first with the cached results, then with the network results. This cache policy can only be used asynchronously with `findInBackground`.
+*   `CACHE_THEN_NETWORK`: The query first loads from the cache, then loads from the network. In this case, the `RTFindCallback` will actually be called twice - first with the cached results, then with the network results. This cache policy can only be used asynchronously with `findInBackground`.
 
 If you need to control the cache's behavior, you can use methods provided in RTQuery to interact with the cache.  You can do the following operations on the cache:
 
@@ -420,7 +420,7 @@ queries.add(lotsOfWins);
 queries.add(fewWins);
 
 RTQuery<RTObject> mainQuery = RTQuery.or(queries);
-mainQuery.findInBackground(new FindCallback<RTObject>() {
+mainQuery.findInBackground(new RTFindCallback<RTObject>() {
   public void done(List<RTObject> results, RTException e) {
     // results has the list of players that win a lot or haven't won much.
   }
