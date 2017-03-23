@@ -41,7 +41,7 @@ There are also a few fields you don't need to specify that are provided as a con
 
 Saving data to the cloud is fun, but it's even more fun to get that data out again.
 
-The most useful method to retrieve RTObject is to query it with method RTQuery.findInBackground():
+The most useful method to retrieve `RTObject` is to query it with method `RTQuery.findInBackground()`:
 
 ```java
 RTQuery<RTObject> query = RTQuery.getQuery("GameScore");
@@ -49,24 +49,26 @@ query.findInBackground(new RTFindCallback<RTObject>() {
   @Override
   public void done(List<RTObject> list, RTException e) {
     if (e == null) {
-      for (RTObject a : list) {
-        Log.d("asd", "asd");
+      for (RTObject item: list) {
+        Log.d(TAG, "message: objectId is " + item.getObjectId());
       }
+    } else {
+      // handle exception
     }
   }
 });
 ```
 
-Saving data to the cloud is fun, but it's even more fun to get that data out again. If you have the `objectId`, you can retrieve the whole `RTObject` using a `RTQuery`:
+If you have the `objectId`, you can retrieve the whole `RTObject` using a `RTQuery.getInBackground()`:
 
 ```java
 RTQuery<RTObject> query = RTQuery.getQuery("GameScore");
-query.getInBackground("xWMyZ4YEGZ", new GetCallback<RTObject>() {
+query.getInBackground("xWMyZ4YEGZ", new RTGetCallback<RTObject>() {
   public void done(RTObject object, RTException e) {
     if (e == null) {
       // object will be your game score
     } else {
-      // something went wrong
+      // handle exception
     }
   }
 });
@@ -94,18 +96,18 @@ If you need to refresh an object you already have with the latest data that
     is in the cloud, you can call the `fetchInBackground` method like so:
 
 ```java
-myObject.fetchInBackground(new GetCallback<RTObject>() {
+myObject.fetchInBackground(new RTGetCallback<RTObject>() {
   public void done(RTObject object, RTException e) {
     if (e == null) {
       // Success!
     } else {
-      // Failure!
+      // handle exception
     }
   }
 });
 ```
 
-The code in the `GetCallback` will be run on the main thread.
+The code in the `RTGetCallback` will be run on the main thread.
 
 ## The Local Datastore
 
@@ -128,12 +130,12 @@ Storing an object is only useful if you can get it back out. To get the data for
 ```java
 RTQuery<RTObject> query = RTQuery.getQuery("GameScore");
 query.fromLocalDatastore();
-query.getInBackground("xWMyZ4YEGZ", new GetCallback<RTObject>() {
+query.getInBackground("xWMyZ4YEGZ", new RTGetCallback<RTObject>() {
   public void done(RTObject object, RTException e) {
     if (e == null) {
       // object will be your game score
     } else {
-      // something went wrong
+      // handle exception
     }
   }
 });
@@ -143,12 +145,12 @@ If you already have an instance of the object, you can instead use the `fetchFro
 
 ```java
 RTObject object = RTObject.createWithoutData("GameScore", "xWMyZ4YEGZ");
-object.fetchFromLocalDatastoreInBackground(new GetCallback<RTObject>() {
+object.fetchFromLocalDatastoreInBackground(new RTGetCallback<RTObject>() {
   public void done(RTObject object, RTException e) {
     if (e == null) {
       // object will be your game score
     } else {
-      // something went wrong
+      // handle exception
     }
   }
 });
@@ -182,7 +184,7 @@ Updating an object is simple. Just set some new data on it and call one of the s
 RTQuery<RTObject> query = RTQuery.getQuery("GameScore");
 
 // Retrieve the object by id
-query.getInBackground("xWMyZ4YEGZ", new GetCallback<RTObject>() {
+query.getInBackground("xWMyZ4YEGZ", new RTGetCallback<RTObject>() {
   public void done(RTObject gameScore, RTException e) {
     if (e == null) {
       // Now let's update it with some new data. In this case, only cheatMode and score
@@ -235,7 +237,7 @@ To delete an object from the Rooftop Cloud:
 myObject.deleteInBackground();
 ```
 
-If you want to run a callback when the delete is confirmed, you can provide a `DeleteCallback` to the `deleteInBackground` method. If you want to block the calling thread, you can use the `delete` method.
+If you want to run a callback when the delete is confirmed, you can provide a `RTDeleteCallback` to the `deleteInBackground` method. If you want to block the calling thread, you can use the `delete` method.
 
 You can delete a single field from an object with the `remove` method:
 
@@ -281,7 +283,7 @@ By default, when fetching an object, related `RTObject`s are not fetched.  These
 
 ```java
 fetchedComment.getRTObject("post")
-    .fetchIfNeededInBackground(new GetCallback<RTObject>() {
+    .fetchIfNeededInBackground(new RTGetCallback<RTObject>() {
         public void done(RTObject post, RTException e) {
           String title = post.getString("title");
           // Do something with your new title variable
@@ -307,12 +309,12 @@ relation.remove(post);
 By default, the list of objects in this relation are not downloaded.  You can get the list of `Post`s by calling `findInBackground` on the `RTQuery` returned by `getQuery`.  The code would look like:
 
 ```java
-relation.getQuery().findInBackground(new FindCallback<RTObject>() {
+relation.getQuery().findInBackground(new RTFindCallback<RTObject>() {
     void done(List<RTObject> results, RTException e) {
-      if (e != null) {
-        // There was an error
-      } else {
+      if (e == null) {
         // results have all the Posts the current user liked.
+      } else {
+        // There was an error
       }
     }
 });
@@ -398,7 +400,7 @@ shield.setRupees(50);
 To create a `RTObject` subclass:
 
 1.  Declare a subclass which extends `RTObject`.
-2.  Add a `@RTClassName` annotation. Its value should be the string you would pass into the `RTObject` constructor, and makes all future class name references unnecessary.
+2.  Add a `@RTClassName` annotation. Its value should be the string you would pass into the `RTObject` constructor, and makes all future class name references unnecessary. If you miss the addition a `@RTClassName` annotation, Rooftop will use simple class name.
 3.  Ensure that your subclass has a public default (i.e. zero-argument) constructor. You must not modify any `RTObject` fields in this constructor.
 4.  Call `RTObject.registerSubclass(YourClass.class)` in your `Application` constructor before calling `Rooftop.initialize()`.
     The following code sucessfully implements and registers the `Armor` subclass of `RTObject`:
@@ -422,7 +424,7 @@ public class App extends Application {
     super.onCreate();
 
     RTObject.registerSubclass(Armor.class);
-    Rooftop.initialize(this, ROOFTOP_APPLICATION_ID, ROOFTOP_CLIENT_KEY);
+    Rooftop.initialize(this);
   }
 }
 ```
@@ -437,11 +439,13 @@ You can add accessors and mutators for the fields of your `RTObject` easily. Dec
 // Armor.java
 @RTClassName("Armor")
 public class Armor extends RTObject {
+  static final String DISPLAY_NAME = "displayName";
+  
   public String getDisplayName() {
-    return getString("displayName");
+    return getString(DISPLAY_NAME);
   }
   public void setDisplayName(String value) {
-    put("displayName", value);
+    put(DISPLAY_NAME, value);
   }
 }
 ```
@@ -479,7 +483,7 @@ You can get a query for objects of a particular subclass using the static method
 ```java
 RTQuery<Armor> query = RTQuery.getQuery(Armor.class);
 query.whereLessThanOrEqualTo("rupees", RTUser.getCurrentUser().get("rupees"));
-query.findInBackground(new FindCallback<Armor>() {
+query.findInBackground(new RTFindCallback<Armor>() {
   @Override
   public void done(List<Armor> results, RTException e) {
     for (Armor a : results) {
