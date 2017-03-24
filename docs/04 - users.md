@@ -29,7 +29,7 @@ user.setEmail("email@example.com");
 // other fields can be set just like with RTObject
 user.put("phone", "650-253-0000");
 
-user.signUpInBackground(new SignUpCallback() {
+user.signUpInBackground(new RTSignUpCallback() {
   public void done(RTException e) {
     if (e == null) {
       // Hooray! Let them use the app now.
@@ -46,7 +46,7 @@ This call will asynchronously create a new user in your Rooftop App. Before it d
 Note that we used the `signUpInBackground` method, not the `saveInBackground` method. New `RTUser`s should always be created using the `signUpInBackground` (or `signUp`) method. Subsequent updates to a user can be done by calling `save`.
 
 The `signUpInBackground` method comes in various flavors, with the ability to pass back errors, and also synchronous versions. As usual, we highly recommend using the asynchronous versions when possible, so as not to block the UI in your app. You can read more about these specific methods in our [API docs](/docs/android/).
-
+RTLogInCallback
 If a signup isn't successful, you should read the error object that is returned. The most likely case is that the username or email has already been taken by another user. You should clearly communicate this to your users, and ask them try a different username.
 
 You are free to use an email address as the username. Simply ask your users to enter their email, but fill it in the username property &mdash; `RTUser` will work as normal. We'll go over how this is handled in the reset password section.
@@ -56,7 +56,7 @@ You are free to use an email address as the username. Simply ask your users to e
 Of course, after you allow users to sign up, you need be able to let them log in to their account in the future. To do this, you can use the class method `logInInBackground`.
 
 ```java
-RTUser.logInInBackground("Jerry", "showmethemoney", new LogInCallback() {
+RTUser.logInInBackground("Jerry", "showmethemoney", new RTLogInCallback() {
   public void done(RTUser user, RTException e) {
     if (user != null) {
       // Hooray! The user is logged in.
@@ -104,7 +104,7 @@ RTUser currentUser = RTUser.getCurrentUser(); // this will now be null
 If you’ve created your own authentication routines, or otherwise logged in a user on the server side, you can now pass the session token to the client and use the `become` method. This method will ensure the session token is valid before setting the current user.
 
 ```java
-RTUser.becomeInBackground("session-token-here", new LogInCallback() {
+RTUser.becomeInBackground("session-token-here", new RTLogInCallback() {
   public void done(RTUser user, RTException e) {
     if (user != null) {
       // The current user is now set to user.
@@ -148,7 +148,7 @@ If you need to check if a `RTUser` is authenticated, you can invoke the `isAuthe
 
 The same security model that applies to the `RTUser` can be applied to other objects. For any object, you can specify which users are allowed to read the object, and which users are allowed to modify an object. To support this type of security, each object has an [access control list](http://en.wikipedia.org/wiki/Access_control_list), implemented by the `RTACL` class.
 
-The simplest way to use a `RTACL` is to specify that an object may only be read or written by a single user. To create such an object, there must first be a logged in `RTUser`. Then, `new RTACL(user)` generates a `RTACL` that limits access to that user. An object's ACL is updated when the object is saved, like any other property. Thus, to create a private note that can only be accessed by the current user:
+The simplest way to use a `RTACL` is to specify that an object may only be read, update or delete by a single user. To create such an object, there must first be a logged in `RTUser`. Then, `new RTACL(user)` generates a `RTACL` that limits access to that user. An object's ACL is updated when the object is saved, like any other property. Thus, to create a private note that can only be accessed by the current user:
 
 ```java
 RTObject privateNote = new RTObject("Note");
@@ -159,7 +159,7 @@ privateNote.saveInBackground();
 
 This note will then only be accessible to the current user, although it will be accessible to any device where that user is signed in. This functionality is useful for applications where you want to enable access to user data across multiple devices, like a personal todo list.
 
-Permissions can also be granted on a per-user basis. You can add permissions individually to a `RTACL` using `setReadAccess` and `setWriteAccess`. For example, let's say you have a message that will be sent to a group of several users, where each of them have the rights to read and delete that message:
+Permissions can also be granted on a per-user basis. You can add permissions individually to a `RTACL` using `setUserAccess`. For example, let's say you have a message that will be sent to a group of several users, where each of them have the rights to read and delete that message:
 
 ```java
 RTObject groupMessage = new RTObject("Message");
@@ -167,20 +167,20 @@ RTACL groupACL = new RTACL();
 
 // userList is an Iterable<RTUser> with the users we are sending this message to.
 for (RTUser user : userList) {
-  groupACL.setReadAccess(user, true);
-  groupACL.setWriteAccess(user, true);
+  groupACL.setUserAccess(user, RTACL.READ_FLAG |
+    RTACL.UPDATE_FLAG | RTACL.DELETE_FLAG);
 }
 
 groupMessage.setACL(groupACL);
 groupMessage.saveInBackground();
 ```
 
-You can also grant permissions to all users at once using `setPublicReadAccess` and `setPublicWriteAccess`. This allows patterns like posting comments on a message board. For example, to create a post that can only be edited by its author, but can be read by anyone:
+You can also grant permissions to all users at once using `setPublicAccess`. This allows patterns like posting comments on a message board. For example, to create a post that can only be edited by its author, but can be read by anyone:
 
 ```java
 RTObject publicPost = new RTObject("Post");
 RTACL postACL = new RTACL(RTUser.getCurrentUser());
-postACL.setPublicReadAccess(true);
+postACL.setPublicAccess(RTACL.READ_FLAG);
 publicPost.setACL(postACL);
 publicPost.saveInBackground();
 ```
@@ -213,16 +213,18 @@ An application that logs data to Rooftop but doesn't provide any user access to 
 RTACL.setDefaultACL(new RTACL(), false);
 ```
 
+**Note:** If you don't set any acl at all (by default for all objects or a specific for the current object), than no one will have access to the saved object, even the user who created it.
+
 Operations that are forbidden, such as deleting an object that you do not have write access to, result in a `RTException.OBJECT_NOT_FOUND` error code. For security purposes, this prevents clients from distinguishing which object ids exist but are secured, versus which object ids do not exist at all.
 
-## Resetting Passwords
+## Resetting Passwords [Not currently supported]
 
 It's a fact that as soon as you introduce passwords into a system, users will forget them. In such cases, our library provides a way to let them securely reset their password.
 
 To kick off the password reset flow, ask the user for their email address, and call:
 
 ```java
-RTUser.requestPasswordResetInBackground("myemail@example.com", new RequestPasswordResetCallback() {
+RTUser.requestPasswordResetInBackground("myemail@example.com", new RTRequestPasswordResetCallback() {
   public void done(RTException e) {
     if (e == null) {
       // An email was successfully sent with reset instructions.
@@ -251,7 +253,7 @@ To query for users, you need to use the special user query:
 ```java
 RTQuery<RTUser> query = RTUser.getQuery();
 query.whereEqualTo("gender", "female");
-query.findInBackground(new FindCallback<RTUser>() {
+query.findInBackground(new RTFindCallback<RTUser>() {
   public void done(List<RTUser> objects, RTException e) {
     if (e == null) {
         // The query was successful.
@@ -281,16 +283,14 @@ post.saveInBackground();
 // Find all posts by the current user
 RTQuery<RTObject> query = RTQuery.getQuery("Post");
 query.whereEqualTo("user", user);
-query.findInBackground(new FindCallback<RTObject>() { ... });
+query.findInBackground(new RTFindCallback<RTObject>() { ... });
 ```
 
 ## Facebook Users
 
-Rooftop provides an easy way to integrate Facebook with your application. The Facebook SDK can be used with our SDK, and is integrated with the `RTUser` class to make linking your users to their Facebook identities easy.
+Rooftop provides an easy way to integrate Facebook with your application. With just a few lines of code, you'll be able to provide a "Log in with Facebook" option in your app, and be able to save their data to Rooftop.
 
-Using our Facebook integration, you can associate an authenticated Facebook user with a `RTUser`. With just a few lines of code, you'll be able to provide a "Log in with Facebook" option in your app, and be able to save their data to Rooftop.
-
-Specialized quickstart guide about RooftopTwitterUtils you can find [here](https://github.com/Rooftoptek/Rooftop-SDK-Android/blob/master/README.md)
+Specialized quickstart guide about RooftopFacebookUtils you can find [here](https://github.com/Rooftoptek/RooftopFacebookUtils-Android/blob/master/README.md).
 
 **Note:** Rooftop is compatible with both Facebook SDK 3.x and 4.x for Android. These instructions are for Facebook SDK 4.x.
 
@@ -299,12 +299,11 @@ Specialized quickstart guide about RooftopTwitterUtils you can find [here](https
 To start using Facebook with Rooftop, you need to:
 
 1.  [Set up a Facebook app](https://developers.facebook.com/apps), if you haven't already.
-2.  Add your application's Facebook Application ID on your Rooftop application's settings page.
-3.  Follow Facebook's instructions for [getting started with the Facebook SDK](https://developers.facebook.com/docs/android/getting-started) to create an app linked to the Facebook SDK.  Once you get to Step 6, stop after linking the Facebook SDK project and configuring the Facebook app ID. You can use our guide to attach your Rooftop users to Facebook accounts when logging in.
-4.  Add url for repositories in project-level build.gradle file:
+2.  Add your application's Facebook Application ID on your Rooftop application's settings page at [Console](https://console.rftp.io). To do this, go to your Rooftop Application -> Settings -> Authentication -> Facebook. Enter your Facebook Application ID (other fields are optional) and switch on the Facebook authentication toggle button.
+3.  Add url for repositories in project-level build.gradle file:
 `maven { url 'https://raw.githubusercontent.com/Rooftoptek/RooftopFacebookUtils-Android/0.5.0/releases/' }`
-5.  Add `compile(group: 'io.rftp', name: 'rooftopfacebookutils', version: '0.5.0')` to your Gradle dependencies.
-6.  Add the following where you initialize the Rooftop SDK in your `Application.onCreate()`:
+4.  Add `compile(group: 'io.rftp', name: 'rooftopfacebookutils', version: '0.5.0')` to your Gradle dependencies.
+5.  Add the following where you initialize the Rooftop SDK in your `Application.onCreate()`:
 
   ```java
   RooftopFacebookUtils.initialize(context);
@@ -326,21 +325,20 @@ If you encounter any issues that are Facebook-related, a good resource is the [o
 
 There are two main ways to use Facebook with your Rooftop users: (1) logging in as a Facebook user and creating a `RTUser`, or (2) linking Facebook to an existing `RTUser`.
 
-<div class='tip info'><div>
-  It is up to you to record any data that you need from the Facebook user after they authenticate. To accomplish this, you'll need to do a graph query using the Facebook SDK.
-</div></div>
+***Note:*** Linking Facebook to an existing `RTUser` not currently supported.
+
+It is up to you to record any data that you need from the Facebook user after they authenticate. To accomplish this, you'll need to do a graph query using the Facebook SDK.
 
 ### Login &amp; Signup
 
 `RooftopFacebookUtils` provides a way to allow your `RTUser`s to log in or sign up through Facebook. This is generally accomplished using the `logInWithReadPermissionsInBackground(String, Collection<String>)` method:
 
 ```java
-RooftopFacebookUtils.logInWithReadPermissionsInBackground(this, permissions, new LogInCallback() {
+RooftopFacebookUtils.logInWithReadPermissionsInBackground(this, permissions, new RTLogInCallback() {
   @Override
   public void done(RTUser user, RTException err) {
   	 if (e == null) {
       if (user == null) {
-        RooftopFacebookUtils.logOut();
         Log.d("MyApp", "Uh oh. The user cancelled the Facebook login.");
       } else if (user.isNew()) {
         Log.d("MyApp", "User signed up and logged in through Facebook!");
@@ -359,20 +357,20 @@ When this code is run, the following happens:
 1.  The user is shown the Facebook login dialog or a prompt generated by the Facebook app.
 2.  The user authenticates via Facebook, and your app receives a callback.
 3.  Our SDK receives the user's Facebook access data and saves it to a `RTUser`. If no `RTUser` exists with the same Facebook ID, then a new `RTUser` is created.
-4.  Your `LogInCallback` is called with the user.
+4.  Your `RTLogInCallback` is called with the user.
 5.  The current user reference will be updated to this user.
 
 In order to display the Facebook login dialogs and activities, the current `Activity` must be provided (often, the current activity is `this` when calling `logInWithReadPermissionsInBackground()` from within the `Activity`) as we have done above.
 
 `RTUser` integration doesn't require any permissions to work out of the box (i.e. `null` is perfectly acceptable). When logging in, you can only use read permissions. See our documentation below about [requesting additional permissions](#fbusers-permissions) (read or publish). [Read more about permissions on Facebook's developer guide.](https://developers.facebook.com/docs/reference/api/permissions/)
 
-### Facebook Linking
+### Facebook Linking [Not currently supported]
 
 If you want to associate an existing `RTUser` to a Facebook account, you can link it like so:
 
 ```java
 if (!RooftopFacebookUtils.isLinked(user)) {
-  RooftopFacebookUtils.linkWithReadPermissionsInBackground(user, this, permissions, new SaveCallback() {
+  RooftopFacebookUtils.linkWithReadPermissionsInBackground(user, this, permissions, new RTSaveCallback() {
     @Override
     public void done(RTException ex) {
       if (RooftopFacebookUtils.isLinked(user)) {
@@ -383,12 +381,12 @@ if (!RooftopFacebookUtils.isLinked(user)) {
 }
 ```
 
-The steps that happen when linking are very similar to log in. The difference is that on successful login, the existing `RTUser` is updated with the Facebook information. Future logins via Facebook will now log the user into their existing account.
+The steps that happen when linking are very similar to log in. The difference is that on successful linking, the existing `RTUser` is updated with the Facebook information. Future logins via Facebook will now log the user into their existing account.
 
 If you want to unlink Facebook from a user, simply do this:
 
 ```java
-RooftopFacebookUtils.unlinkInBackground(user, new SaveCallback() {
+RooftopFacebookUtils.unlinkInBackground(user, new RTSaveCallback() {
   @Override
   public void done(RTException ex) {
     if (ex == null) {
@@ -422,15 +420,14 @@ Specialized quickstart guide about RooftopTwitterUtils you can find [here](https
 To start using Twitter with Rooftop, you need to:
 
 1.  [Set up a Twitter app](https://dev.twitter.com/apps), if you haven't already.
-2.  Add your application's Twitter consumer key on your Rooftop application's settings page.
-3.  When asked to specify a "Callback URL" for your Twitter app, please insert a valid URL. This value will not be used by your iOS or Android application, but is necessary in order to enable authentication through Twitter.
-4.  Add url for repositories in project-level build.gradle file: `maven { url 'https://raw.githubusercontent.com/Rooftoptek/RooftopTwitterUtils-Android/0.5.0/releases/' }`
-5.  Add `compile(group: 'io.rftp', name: 'rooftoptwitterutils', version: '0.5.0')'` to your Gradle dependencies.
-6.  Add the following where you initialize the Rooftop SDK in your `Application.onCreate()`
+2.  Add your application's Twitter consumer key and consumer secret on your Rooftop application's settings page at [Console](https://console.rftp.io). To do this, go to the Rooftop Application -> Settings -> Authentication -> Twitter. Enter your credentials to corresponding fields, switch on the Twitter/Digits authentication toggle button.
+3.  Add url for repositories in project-level build.gradle file: `maven { url 'https://raw.githubusercontent.com/Rooftoptek/RooftopTwitterUtils-Android/0.5.0/releases/' }`
+4.  Add `compile(group: 'io.rftp', name: 'rooftoptwitterutils', version: '0.5.0')'` to your Gradle dependencies.
+5.  Add the following where you initialize the Rooftop SDK in your `Application.onCreate()`
 
-```java
-RooftopTwitterUtils.initialize(Application.this);
-```
+	```java
+	RooftopTwitterUtils.initialize(this);
+	```
 
 If you encounter any issues that are Twitter-related, a good resource is the [official Twitter documentation](https://dev.twitter.com/docs).
 
@@ -441,12 +438,11 @@ There are two main ways to use Twitter with your Rooftop users: (1) logging in a
 `RooftopTwitterUtils` provides a way to allow your `RTUser`s to log in or sign up through Twitter. This is accomplished using the `logIn()` method:
 
 ```java
-RooftopTwitterUtils.logIn(this, new LogInCallback() {
+RooftopTwitterUtils.logIn(this, new RTLogInCallback() {
   @Override
   public void done(RTUser user, RTException err) {
    	if (e == null) {
       if (user == null) {
-        RooftopFacebookUtils.logOut();
         Log.d("MyApp", "Uh oh. The user cancelled the Twitter login.");
       } else if (user.isNew()) {
         Log.d("MyApp", "User signed up and logged in through Twitter!");
@@ -465,17 +461,18 @@ When this code is run, the following happens:
 1.  The user is shown the Twitter login dialog.
 2.  The user authenticates via Twitter, and your app receives a callback.
 3.  Our SDK receives the Twitter data and saves it to a `RTUser`. If it's a new user based on the Twitter handle, then that user is created.
-4.  Your `LogInCallback` is called with the user.
+4.  Your `RTLogInCallback` is called with the user.
+5.  The current user reference will be updated to this user.
 
 In order to display the Twitter login dialogs and activities, the current `Context` must be provided (often, the current context is `this` when calling `logIn()` from within the `Activity`) as we have done above.
 
-### Twitter Linking
+### Twitter Linking [Not currently supported]
 
 If you want to associate an existing `RTUser` with a Twitter account, you can link it like so:
 
 ```java
 if (!RooftopTwitterUtils.isLinked(user)) {
-  RooftopTwitterUtils.link(user, this, new SaveCallback() {
+  RooftopTwitterUtils.link(user, this, new RTSaveCallback() {
     @Override
     public void done(RTException ex) {
       if (RooftopTwitterUtils.isLinked(user)) {
@@ -486,12 +483,12 @@ if (!RooftopTwitterUtils.isLinked(user)) {
 }
 ```
 
-The steps that happen when linking are very similar to log in. The difference is that on successful login, the existing `RTUser` is updated with the Twitter information. Future logins via Twitter will now log the user into their existing account.
+The steps that happen when linking are very similar to log in. The difference is that on successful linking, the existing `RTUser` is updated with the Twitter information. Future logins via Twitter will now log the user into their existing account.
 
 If you want to unlink Twitter from a user, simply do this:
 
 ```java
-RooftopTwitterUtils.unlinkInBackground(user, new SaveCallback() {
+RooftopTwitterUtils.unlinkInBackground(user, new RTSaveCallback() {
   @Override
   public void done(RTException ex) {
     if (ex == null) {
@@ -516,3 +513,57 @@ try {
   urlConnection.disconnect();
 }
 ```
+
+## Digits User
+
+Rooftop also provides an easy way to integrate Digits authentication into your application. It is very simular to Twitter authorization.
+
+Specialized quickstart guide about RooftopDigitsUtils you can find [here](https://github.com/Rooftoptek/RooftopDigitsUtils-Android/blob/master/README.md)
+
+### Setup
+
+To start using Digits with Rooftop, you need to:
+
+1.  [Set up a Digits app](https://fabric.io/kits/android/digits), if you haven't already.
+2.  Add your application's Fabric consumer key and consumer secret on your Rooftop application's settings page at [Console](https://console.rftp.io). To do this, go to the Rooftop Application -> Settings -> Authentication -> Twitter. Enter your credentials to corresponding fields, switch on the Twitter/Digits authentication toggle button.
+3.  Add url for repositories in project-level build.gradle file: `maven { url 'https://raw.githubusercontent.com/Rooftoptek/RooftopDigitsUtils-Android/0.5.0/releases/' }`
+4.  Add `compile(group: 'io.rftp', name: 'rooftopdigitsutils', version: '0.5.0')'` to your Gradle dependencies.
+5.  Add the following where you initialize the Rooftop SDK in your `Application.onCreate()`
+
+	```java
+	RooftopDigitsUtils.initialize(this);
+	```
+
+If you encounter any issues that are Digits-related, a good resource is the [official Digits documentation](https://docs.fabric.io/android/fabric/overview.html).
+
+### Login &amp; Signup
+
+`RooftopDigitsUtils` provides a way to allow your `RTUser`s to log in or sign up through Digits. This is accomplished using the `logIn()` method:
+
+```java
+RooftopDigitsUtils.logIn(new RTLogInCallback() {
+  @Override
+  public void done(RTUser user, RTException err) {
+   	if (e == null) {
+      if (user == null) {
+        Log.d("MyApp", "Uh oh. The user cancelled the Twitter login.");
+      } else if (user.isNew()) {
+        Log.d("MyApp", "User signed up and logged in through Digits!");
+      } else {
+        Log.d("MyApp", "User logged in through Digits!");
+      }
+    } else {
+      e.printStackTrace();
+    }
+  }
+});
+```
+
+When this code is run, the following happens:
+
+1.  The user is shown the Digits login dialog.
+2.  The user authenticates via Digits, and your app receives a callback.
+3.  Our SDK receives the Digits data and saves it to a `RTUser`. If it's a new user based on the Digits handle, then that user is created.
+4.  Your `RTLogInCallback` is called with the user.
+5.  The current user reference will be updated to this user.
+
