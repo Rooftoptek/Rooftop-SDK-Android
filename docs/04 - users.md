@@ -215,6 +215,8 @@ RTACL.setDefaultACL(new RTACL(), false);
 
 **Note:** If you don't set any acl at all (by default for all objects or a specific for the current object), than no one will have access to the saved object, even the user who created it.
 
+For more details about how acl works look `RTACL` [section] (#RTACL).
+
 Operations that are forbidden, such as deleting an object that you do not have write access to, result in a `RTException.OBJECT_NOT_FOUND` error code. For security purposes, this prevents clients from distinguishing which object ids exist but are secured, versus which object ids do not exist at all.
 
 ## Resetting Passwords [Not currently supported]

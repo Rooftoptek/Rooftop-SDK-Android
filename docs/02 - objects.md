@@ -26,6 +26,15 @@ gameScore.put("cheatMode", false);
 gameScore.saveInBackground();
 ```
 
+Also you have to specify `RTACL` for `RTObject` before save it. It is looks like:
+```java
+RTACL acl = new RTACL();
+acl.setPublicAccess(RTACL.READ_FLAG);
+gameScore.setACL(acl);
+```
+
+For more details about how acl works look `RTACL` [section] (#RTACL).
+
 Object saved in database will have next properties:
 
 ```javascript

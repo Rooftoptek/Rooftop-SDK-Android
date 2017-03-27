@@ -25,7 +25,7 @@ RTGeoPoint userLocation = (RTGeoPoint) userObject.get("location");
 RTQuery<RTObject> query = RTQuery.getQuery("PlaceObject");
 query.whereNear("location", userLocation);
 query.setLimit(10);
-query.findInBackground(new FindCallback<RTObject>() { ... });
+query.findInBackground(new RTFindCallback<RTObject>() { ... });
 ```
 
 At this point `nearPlaces` will be an array of objects ordered by distance (nearest to farthest) from `userLocation`. Note that if an additional `orderByAscending()`/`orderByDescending()` constraint is applied, it will take precedence over the distance ordering.
@@ -39,7 +39,7 @@ RTGeoPoint southwestOfSF = new RTGeoPoint(37.708813, -122.526398);
 RTGeoPoint northeastOfSF = new RTGeoPoint(37.822802, -122.373962);
 RTQuery<RTObject> query = RTQuery.getQuery("PizzaPlaceObject");
 query.whereWithinGeoBox("location", southwestOfSF, northeastOfSF);
-query.findInBackground(new FindCallback<RTObject>() { ... });
+query.findInBackground(new RTFindCallback<RTObject>() { ... });
 ```
 
 ## Caveats

@@ -12,14 +12,14 @@ public class App extends Application {
     super.onCreate();
 
     Rooftop.enableLocalDatastore(this);
-    Rooftop.initialize(this, ROOFTOP_APPLICATION_ID, ROOFTOP_CLIENT_KEY);
+    Rooftop.initialize(this);
   }
 }
 ```
 
 There are a couple of side effects of enabling the local datastore that you should be aware of. When enabled, there will only be one instance of any given `RTObject`. For example, imagine you have an instance of the `"GameScore"` class with an `objectId` of `"xWMyZ4YEGZ"`, and then you issue a `RTQuery` for all instances of `"GameScore"` with that `objectId`. The result will be the same instance of the object you already have in memory.
 
-Another side effect is that the current user and current installation will be stored in the local datastore, so you can persist unsaved changes to these objects between runs of your app using the methods below.
+Another side effect is that the current user and current installation (service object for handle Push Notification) will be stored in the local datastore, so you can persist unsaved changes to these objects between runs of your app using the methods below.
 
 Calling the `saveEventually` method on a `RTObject` will cause the object to be pinned in the local datastore until the save completes. So now, if you change the current `RTUser` and call `RTUser.getCurrentUser().saveEventually()`, your app will always see the changes that you have made.
 
@@ -50,14 +50,14 @@ Storing objects is great, but it's only useful if you can then get the objects b
 ```java
 RTQuery<RTObject> query = RTQuery.getQuery(“GameScore");
 query.fromLocalDatastore();
-query.getInBackground("xWMyZ4YE", new GetCallback<RTObject>() {
-    public void done(RTObject object, RTException e) {
-        if (e == null) {
-            // object will be your game score
-        } else {
-            // something went wrong
-        }
+query.getInBackground("xWMyZ4YE", new RTGetCallback<RTObject>() {
+  public void done(RTObject object, RTException e) {
+    if (e == null) {
+      // object will be your game score
+    } else {
+      // something went wrong
     }
+  }
 });
 ```
 
@@ -69,15 +69,15 @@ Often, you'll want to find a whole list of objects that match certain criteria, 
 RTQuery<RTObject> query = RTQuery.getQuery("GameScore");
 query.whereEqualTo("playerName", "Joe Bob");
 query.fromLocalDatastore();
-query.findInBackground(new FindCallback<RTObject>() {
-    public void done(List<RTObject> scoreList,
-                     RTException e) {
-        if (e == null) {
-            Log.d("score", "Retrieved " + scoreList.size());
-        } else {
-            Log.d("score", "Error: " + e.getMessage());
-        }
+query.findInBackground(new RTFindCallback<RTObject>() {
+  public void done(List<RTObject> scoreList,
+                   RTException e) {
+    if (e == null) {
+      Log.d("score", "Retrieved " + scoreList.size());
+    } else {
+      Log.d("score", "Error: " + e.getMessage());
     }
+  }
 });
 ```
 
@@ -124,7 +124,7 @@ RTQuery<RTObject> query = RTQuery.getQuery(“GameScore");
 query.orderByDescending(“score”);
 
 // Query for new results from the network.
-query.findInBackground(new FindCallback<RTObject>() {
+query.findInBackground(new RTFindCallback<RTObject>() {
   public void done(final List<RTObject> scores, RTException e) {
     // Remove the previously cached results.
     RTObject.unpinAllInBackground(“highScores”, new DeleteCallback() {
@@ -144,7 +144,7 @@ RTQuery<RTObject> query = RTQuery.getQuery(“GameScore");
 query.orderByDescending(“score”);
 query.fromLocalDatastore();
 
-query.findInBackground(new FindCallback<RTObject>() {
+query.findInBackground(new RTFindCallback<RTObject>() {
   public void done(List<RTObject> scores, RTException e) {
     // Yay! Cached scores!
   }
@@ -164,7 +164,7 @@ If you'd like to have more control over the way objects are synced, you can keep
 ```java
 RTQuery<RTObject> query = RTQuery.getQuery(“GameScore");
 query.fromPin(“MyChanges”);
-query.findInBackground(new FindCallback<RTObject>() {
+query.findInBackground(new RTFindCallback<RTObject>() {
   public void done(List<RTObject> scores, RTException e) {
     for (RTObject score in scores) {
       score.saveInBackground();
