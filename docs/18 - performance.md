@@ -7,7 +7,7 @@ You can improve your app's performance by looking at the following:
 * Writing efficient queries.
 * Writing restrictive queries.
 * Using client-side caching.
-* Using Cloud Code.
+* Using Data Events.
 * Avoiding count queries.
 * Using efficient search techniques.
 
@@ -58,7 +58,7 @@ query.whereKey("playerName", containedIn: ["Jonathan Walsh", "Dario Wunsch", "Sh
 {: .common-lang-block .swift }
 
 ```java
-RooftopQuery<RooftopObject> query = RooftopQuery.getQuery("GameScore");
+RTQuery<RTObject> query = RTQuery.getQuery("GameScore");
 query.whereEqualTo("score", 50);
 query.whereContainedIn("playerName", Arrays.asList("Jonathan Walsh", "Dario Wunsch", "Shawn Simon"));
 ```
@@ -71,16 +71,6 @@ var query = new RooftopObject.GetQuery("GameScore")
     .WhereContainedIn("playerName", names);
 ```
 {: .common-lang-block .cs }
-
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
 
 Creating an index query based on the score field would yield a smaller search space in general than creating one on the `playerName` field.
 
@@ -185,11 +175,11 @@ query.findObjectsInBackgroundWithBlock {
 {: .common-lang-block .swift }
 
 ```java
-RooftopQuery<RooftopObject> query = RooftopQuery.getQuery("GameScore");
+RTQuery<RTObject> query = RTQuery.getQuery("GameScore");
 query.whereNotEqualTo("playerName", "Michael Yabuti");
-query.findInBackground(new FindCallback<RooftopObject>() {
+query.findInBackground(new RTFindCallback<RTObject>() {
   @Override
-  public void done(List<RooftopObject> list, RooftopException e) {
+  public void done(List<RTObject> list, RTException e) {
     if ( e == null) {
       // Retrieved scores successfully
     }
@@ -204,16 +194,6 @@ var results = await RooftopObject.GetQuery("GameScore")
     .FindAsync();
 ```
 {: .common-lang-block .cs }
-
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
 
 This query can't take advantage of indexes. The database has to look at all the objects in the `"GameScore"` class to satisfy the constraint and retrieve the results. As the number of entries in the class grows, the query takes longer to run.
 
@@ -240,7 +220,7 @@ query.whereKey("state", notEqualTo: "Invited")
 {: .common-lang-block .swift }
 
 ```java
-RooftopQuery<RooftopUser> query = RooftopQuery.getQuery(RooftopUser.class);
+RTQuery<RTUser> query = RTQuery.getQuery(RTUser.class);
 query.whereNotEqualTo("state", "Invited");
 ```
 {: .common-lang-block .java }
@@ -250,16 +230,6 @@ var query = RooftopUser.Query
     .WhereNotEqualTo("state", "Invited");
 ```
 {: .common-lang-block .cs }
-
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
 
 It would be faster to use the “Contained In” condition when setting up the query:
 
@@ -288,16 +258,6 @@ query.whereContainedIn("state", Arrays.asList("SignedUp", "Verified"));
 query.WhereContainedIn("state", new[] { "SignedUp", "Verified" });
 ```
 {: .common-lang-block .cs }
-
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
 
 Sometimes, you may have to completely rewrite your query. Going back to the `"GameScore"` example, let's say we were running that query to display players who had scored higher than the given player. We could do this differently, by first getting the given player's high score and then using the following query:
 
@@ -338,12 +298,12 @@ query.findObjectsInBackgroundWithBlock {
 {: .common-lang-block .swift }
 
 ```java
-RooftopQuery<RooftopObject> query = RooftopQuery.getQuery("GameScore");
+RTQuery<RTObject> query = RTQuery.getQuery("GameScore");
 // Previously retrieved highScore for Michael Yabuti
 query.whereGreaterThan("score", highScore);
-query.findInBackground(new FindCallback<RooftopObject>() {
+query.findInBackground(new RTFindCallback<RTObject>() {
   @Override
-  public void done(List<RooftopObject> list, RooftopException e) {
+  public void done(List<RTObject> list, RTException e) {
     if (e == null) {
       // Retrieved scores successfully
     }
@@ -359,16 +319,6 @@ var results = await RooftopObject.GetQuery("GameScore")
     .FindAsync();
 ```
 {: .common-lang-block .cs }
-
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
 
 The new query you use depends on your use case. This may sometimes mean a redesign of your data model.
 
@@ -395,7 +345,7 @@ query.whereKey("state", notContainedIn: ["Invited", "Blocked"])
 {: .common-lang-block .swift }
 
 ```java
-RooftopQuery<RooftopUser> query = RooftopQuery.getQuery(RooftopUser.class);
+RTQuery<RTUser> query = RTQuery.getQuery(RTUser.class);
 query.whereNotContainedIn("state", Arrays.asList("Invited", "Blocked"));
 ```
 {: .common-lang-block .java }
@@ -405,16 +355,6 @@ var query = RooftopUser.Query
     .WhereNotContainedIn("state", new[] { "Invited", "Blocked" });
 ```
 {: .common-lang-block .cs }
-
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
 
 Using a complimentary “Contained In” query constraint will always be faster:
 
@@ -443,21 +383,9 @@ query.WhereContainedIn("state", new[] { "SignedUp", "Verified"});
 ```
 {: .common-lang-block .cs }
 
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
-
 This means rewriting your queries accordingly. Your query rewrites will depend on your schema set up. It may mean redoing that schema.
 
 ### Regular Expressions
-
-Regular expression queries should be avoided due to performance considerations. MongoDB is not efficient for doing partial string matching except for the special case where you only want a prefix match. Queries that have regular expression constraints are therefore very expensive, especially for classes with over 100,000 records. Consider restricting how many such operations can be run on a particular app at any given time.
 
 You should avoid using regular expression constraints that don't use indexes. For example, the following query looks for data with a given string in the `"playerName"` field. The string search is case insensitive and therefore cannot be indexed:
 
@@ -486,16 +414,6 @@ query.WhereMatches("playerName", "Michael", "i")
 ```
 {: .common-lang-block .cs }
 
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
-
 The following query, while case sensitive, looks for any occurrence of the string in the field and cannot be indexed:
 
 ```javascript
@@ -523,16 +441,6 @@ query.WhereContains("playerName", "Michael")
 ```
 {: .common-lang-block .cs }
 
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
-
 These queries are both slow. In fact, the `matches` and `contains` query constraints are not covered in our querying guides on purpose and we do not recommend using them. Depending on your use case, you should switch to using the following constraint that uses an index, such as:
 
 ```javascript
@@ -559,16 +467,6 @@ query.whereStartsWith("playerName", "Michael");
 query.WhereStartsWith("playerName", "Michael")
 ```
 {: .common-lang-block .cs }
-
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
 
 This looks for data that starts with the given string. This query will use the backend index, so it will be faster even for large datasets.
 
@@ -598,16 +496,6 @@ query.whereMatches("playerName", "^Michael");
 query.WhereMatches("playerName", "^Michael")
 ```
 {: .common-lang-block .cs }
-
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
 
 Most of the use cases around using regular expressions involve implementing search. A more performant way of implementing search is detailed later.
 
@@ -641,16 +529,6 @@ query.setLimit(10); // limit to at most 10 results
 query.Limit(10); // limit to at most 10 results
 ```
 {: .common-lang-block .cs }
-
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
 
 If you're issuing queries on GeoPoints, make sure you specify a reasonable radius:
 
@@ -687,11 +565,11 @@ query.findObjectsInBackgroundWithBlock {
 {: .common-lang-block .swift }
 
 ```java
-RooftopQuery<RooftopObject> query = RooftopQuery.getQuery("Place");
+RTQuery<RTObject> query = RTQuery.getQuery("Place");
 query.whereWithinMiles("location", userGeoPoint, 10.0);
-query.findInBackground(new FindCallback<RooftopObject>() {
+query.findInBackground(new RTFindCallback<RTObject>() {
   @Override
-  public void done(List<RooftopObject> list, RooftopException e) {
+  public void done(List<RTObject> list, RTException e) {
     if (e == null) {
       // List of places within 10 miles of a user's location
     }
@@ -706,16 +584,6 @@ var results = await RooftopObject.GetQuery("GameScore")
     .FindAsync();
 ```
 {: .common-lang-block .cs }
-
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
 
 You can further limit the fields returned by calling select:
 
@@ -753,11 +621,11 @@ query.findObjectsInBackgroundWithBlock {
 {: .common-lang-block .swift }
 
 ```java
-RooftopQuery<RooftopObject> query = RooftopQuery.getQuery("GameScore");
+RTQuery<RTObject> query = RTQuery.getQuery("GameScore");
 query.selectKeys(Arrays.asList("score", "playerName"));
-query.findInBackground(new FindCallback<RooftopObject>() {
+query.findInBackground(new RTFindCallback<RTObject>() {
   @Override
-  public void done(List<RooftopObject> list, RooftopException e) {
+  public void done(List<RTObject> list, RTException e) {
     if (e == null) {
       // each of results will only have the selected fields available.
     }
@@ -774,27 +642,17 @@ var results = await RooftopObject.GetQuery("GameScore")
 ```
 {: .common-lang-block .cs }
 
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
-
 ## Client-side Caching
 
 For queries run from iOS and Android, you can turn on query caching. See the [iOS](/docs/ios/guide#queries-caching-queries) and [Android](/docs/android/guide#queries-caching-queries) guides for more details. Caching queries will increase your mobile app's performance especially in cases where you want to display cached data while fetching the latest data from Rooftop.
 
-## Use Cloud Code
+## Use Data Events
 
-Cloud Code allows you to run custom JavaScript logic on Rooftop Server instead of on the client.
+Data Events allows you to run custom JavaScript logic on Rooftop Server instead of on the client.
 
-You can use this to offload processing to the Rooftop servers thus increasing your app's perceived performance.  You can create hooks that run whenever an object is saved or deleted. This is useful if you want to validate or sanitize your data. You can also use Cloud Code to modify related objects or kick off other processes such as sending off a push notification.
+You can use this to offload processing to the Rooftop servers thus increasing your app's perceived performance.  You can create hooks that run whenever an object is saved or deleted. This is useful if you want to validate or sanitize your data. You can also use Data Events to modify related objects or kick off other processes such as sending off a push notification.
 
-We saw examples of limiting the data returned by writing restrictive queries. You can also use [Cloud Functions](/docs/cloudcode/guide#cloud-code-cloud-functions) to help limit the amount of data returned to your app. In the following example, we use a Cloud Function to get a movie's average rating:
+We saw examples of limiting the data returned by writing restrictive queries. You can also use [RAPID](/docs/cloudcode/guide#cloud-code-cloud-functions) to help limit the amount of data returned to your app. In the following example, we use a RAPID to get a movie's average rating:
 
 ```javascript
 Rooftop.Cloud.define("averageStars", function(request, response) {
@@ -813,9 +671,9 @@ Rooftop.Cloud.define("averageStars", function(request, response) {
 });
 ```
 
-You could have ran a query on the Review class on the client, returned only the stars field data and computed the result on the client. As the number of reviews for a movie increases you can see that the data being returned to the device using this methodology also increases. Implementing the functionality through a Cloud Function returns the one result if successful.
+You could have ran a query on the Review class on the client, returned only the stars field data and computed the result on the client. As the number of reviews for a movie increases you can see that the data being returned to the device using this methodology also increases. Implementing the functionality through a RAPID returns the one result if successful.
 
-As you look at optimizing your queries, you'll find that you may have to change the queries - sometimes even after you've shipped your app to the App Store or Google Play. The ability to change your queries without a client update is possible if you use [Cloud Functions](/docs/cloudcode/guide#cloud-code-cloud-functions). Even if you have to redesign your schema, you could make all the changes in your Cloud Functions while keeping the client interface the same to avoid an app update. Take the average stars Cloud Function example from before, calling it from a client SDK would look like this:
+As you look at optimizing your queries, you'll find that you may have to change the queries - sometimes even after you've shipped your app to the App Store or Google Play. The ability to change your queries without a client update is possible if you use [RAPID](/docs/cloudcode/guide#cloud-code-cloud-functions). Even if you have to redesign your schema, you could make all the changes in your RAPID while keeping the client interface the same to avoid an app update. Take the average stars RAPID example from before, calling it from a client SDK would look like this:
 
 ```javascript
 Rooftop.Cloud.run("averageStars", { "movie": "The Matrix" }).then(function(ratings) {
@@ -848,9 +706,9 @@ RTCloud.callFunctionInBackground("averageStars", withParameters: ["movie": "The 
 ```java
 HashMap<String, String> params = new HashMap();
 params.put("movie", "The Matrix");
-RooftopCloud.callFunctionInBackground("averageStars", params, new FunctionCallback<Float>() {
+RTRapid.invokeInBackground("averageStars", params, new RTFunctionCallback<Float>() {
   @Override
-  public void done(Float aFloat, RooftopException e) {
+  public void done(Float aFloat, RTException e) {
     if (e == null) {
       // ratings is 4.5
     }
@@ -871,16 +729,6 @@ RooftopCloud.CallFunctionAsync<float>("averageStars", dictionary).ContinueWith(t
 });
 ```
 {: .common-lang-block .cs }
-
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
 
 If later on, you need to modify the underlying data model, your client call can remain the same, as long as you return back a number that represents the ratings result.
 
@@ -927,12 +775,12 @@ query.countObjectsInBackgroundWithBlock {
 {: .common-lang-block .swift }
 
 ```java
-RooftopQuery<RooftopObject> query = RooftopQuery.getQuery("Review");
+RTQuery<RTObject> query = RTQuery.getQuery("Review");
 // movieId corresponds to a given movie's id
 query.whereEqualTo("movie", movieId);
-query.countInBackground(new CountCallback() {
+query.countInBackground(new RTCountCallback() {
   @Override
-  public void done(int i, RooftopException e) {
+  public void done(int i, RTException e) {
     if ( e == null) {
       // Request succeeded
     }
@@ -948,16 +796,6 @@ var count = await RooftopObject.GetQuery("Review")
     .CountAsync();
 ```
 {: .common-lang-block .cs }
-
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
 
 If you run the count query for each of the UI elements, they will not run efficiently on large data sets. One approach to avoid using the `count()` operator could be to add a field to the Movie class that represents the review count for that movie. When saving an entry to the Review class you could increment the corresponding movie's review count field. This can be done in an `afterSave` handler:
 
@@ -1013,10 +851,10 @@ query.findObjectsInBackgroundWithBlock {
 {: .common-lang-block .swift }
 
 ```java
-RooftopQuery<RooftopObject> query = RooftopQuery.getQuery("Movie");
-query.findInBackground(new FindCallback<RooftopObject>() {
+RTQuery<RTObject> query = RTQuery.getQuery("Movie");
+query.findInBackground(new RTFindCallback<RTObject>() {
   @Override
-  public void done(List<RooftopObject> list, RooftopException e) {
+  public void done(List<RTObject> list, RTException e) {
     if (e == null) {
       // Results include the reviews count field
     }
@@ -1032,25 +870,13 @@ var results = await RooftopObject.GetQuery("Movie")
 ```
 {: .common-lang-block .cs }
 
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
-
-You could also use a separate Rooftop Object to keep track of counts for each review. Whenever a review gets added or deleted, you can increment or decrement the counts in an `afterSave` or `afterDelete` Cloud Code handler. The approach you choose depends on your use case.
+You could also use a separate Rooftop Object to keep track of counts for each review. Whenever a review gets added or deleted, you can increment or decrement the counts in an `afterSave` or `afterDelete` Data Events handler. The approach you choose depends on your use case.
 
 ## Implement Efficient Searches
 
-As mentioned previously, MongoDB is not efficient for doing partial string matching. However, this is an important use case when implementing search functionality that scales well in production.
-
 Simplistic search algorithms simply scan through all the class data and executes the query on each entry. The key to making searches run efficiently is to minimize the number of data that has to be examined when executing each query by using an index as we've outlined earlier. You’ll need to build your data model in a way that it’s easy for us to build an index for the data you want to be searchable. For example, string matching queries that don’t match an exact prefix of the string won’t be able to use an index leading to timeout errors as the data set grows.
 
-Let's walk through an example of how you could build an efficient search. You can apply the concepts you learn in this example to your use case. Say your app has users making posts, and you want to be able to search those posts for hashtags or particular keywords. You’ll want to pre-process your posts and save the list of hashtags and words into array fields. You can do this processing either in your app before saving the posts, or you can use a Cloud Code `beforeSave` hook to do this on the fly:
+Let's walk through an example of how you could build an efficient search. You can apply the concepts you learn in this example to your use case. Say your app has users making posts, and you want to be able to search those posts for hashtags or particular keywords. You’ll want to pre-process your posts and save the list of hashtags and words into array fields. You can do this processing either in your app before saving the posts, or you can use a Data Events `beforeSave` hook to do this on the fly:
 
 ```javascript
 var _ = require("underscore");
@@ -1071,7 +897,7 @@ Rooftop.Cloud.beforeSave("Post", function(request, response) {
 });
 ```
 
-This saves your words and hashtags in array fields, which MongoDB will store with a multi-key index. There are some important things to notice about this. First of all it’s converting all words to lower case so that we can look them up with lower case queries, and get case insensitive matching. Secondly, it’s filtering out common words like ‘the’, ‘in’, and ‘and’ which will occur in a lot of posts, to additionally reduce useless scanning of the index when executing the queries.
+This saves your words and hashtags in array fields. There are some important things to notice about this. First of all it’s converting all words to lower case so that we can look them up with lower case queries, and get case insensitive matching. Secondly, it’s filtering out common words like ‘the’, ‘in’, and ‘and’ which will occur in a lot of posts, to additionally reduce useless scanning of the index when executing the queries.
 
 Once you've got the keywords set up, you can efficiently look them up using “All” constraint on your query:
 
@@ -1111,11 +937,11 @@ query.findObjectsInBackgroundWithBlock {
 {: .common-lang-block .swift }
 
 ```java
-RooftopQuery<RooftopObject> query = RooftopQuery.getQuery("Post");
-query.whereContainsAll("hashtags", Arrays.asList("#rooftop", "#ftw"));
-query.findInBackground(new FindCallback<RooftopObject>() {
+RTQuery<RTObject> query = RTQuery.getQuery("Post");
+query.whereContainsAll("hashtags", Arrays.asList("#rooftop", "#sometag"));
+query.findInBackground(new RTFindCallback<RTObject>() {
   @Override
-  public void done(List<RooftopObject> list, RooftopException e) {
+  public void done(List<RTObject> list, RTException e) {
     if (e == null) {
       // Request succeeded
     }
@@ -1130,16 +956,6 @@ var results = await RooftopObject.GetQuery("Post")
     .FindAsync();
 ```
 {: .common-lang-block .cs }
-
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
 
 ## Limits and Other Considerations
 
@@ -1170,6 +986,6 @@ There are some limits in place to ensure the API can provide the data you need i
 
 * [Delivery of notifications is a “best effort”, not guaranteed](https://developer.apple.com/library/ios/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/Chapters/ApplePushService.html#//apple_ref/doc/uid/TP40008194-CH100-SW1). It is not intended to deliver data to your app, only to notify the user that there is new data available.
 
-**Cloud Code**
+**Data Events**
 
-* The `params` payload that is passed to a Cloud Function is limited to 50 MB.
+* The `params` payload that is passed to a RAPID is limited to 50 MB.
