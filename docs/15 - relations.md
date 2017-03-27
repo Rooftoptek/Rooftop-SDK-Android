@@ -10,13 +10,13 @@ When you’re thinking about one-to-many relationships and whether to implement 
 
 ### Using Pointers
 
-Let's say we have a game app. The game keeps track of the player's score and achievements every time she chooses to play. In Rooftop, we can store this data in a single `Game` object. If the game becomes incredibly successful, each player will store thousands of `Game` objects in the system. For circumstances like this, where the number of relationships can be arbitrarily large, Pointers are the best option.
+Let's say we have a game app. The game keeps track of the player's score and achievements every time he chooses to play. In Rooftop, we can store this data in a single `Game` object. If the game becomes incredibly successful, each player will store thousands of `Game` objects in the system. For circumstances like this, where the number of relationships can be arbitrarily large, Pointers are the best option.
 
 Suppose in this game app, we want to make sure that every `Game` object is associated with a Rooftop User. We can implement this like so:
 
 ```java
-RooftopObject game = new RooftopObject("Game");
-game.put("createdBy", RooftopUser.getCurrentUser());
+RTObject game = new RTObject("Game");
+game.put("createdBy", RTUser.getCurrentUser());
 ```
 {: .common-lang-block .java }
 
@@ -50,32 +50,20 @@ game.set("createdBy", Rooftop.User.current());
 ```
 {: .common-lang-block .js }
 
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
-
 We can obtain all of the `Game` objects created by a Rooftop User with a query:
 
 ```java
-RooftopQuery<RooftopObject> gameQuery = RooftopQuery.getQuery("Game");
-gameQuery.whereEqualTo("createdBy", RooftopUser.getCurrentUser());
+RTQuery<RTObject> gameQuery = RTQuery.getQuery("Game");
+gameQuery.whereEqualTo("createdBy", RTUser.getCurrentUser());
 ```
 {: .common-lang-block .java }
 
-<pre><code class="objectivec">
-RTQuery *gameQuery = [RTQuery queryWithClassName:@"Game"];
+<pre><code class="objectivec">RTQuery *gameQuery = [RTQuery queryWithClassName:@"Game"];
 [gameQuery whereKey:@"createdBy" equalTo:[RTUser currentUser]];
 </code></pre>
 {: .common-lang-block .objectivec }
 
-<pre><code class="swift">
-let gameQuery = RTQuery(className:"Game")
+<pre><code class="swift">let gameQuery = RTQuery(className:"Game")
 if let user = RTUser.currentUser() {
   gameQuery.whereKey("createdBy", equalTo: user)
 }
@@ -99,29 +87,18 @@ query.equalTo("createdBy", Rooftop.User.current());
 ```
 {: .common-lang-block .js }
 
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
-
 And, if we want to find the Rooftop User who created a specific `Game`, that is a lookup on the `createdBy` key:
 
 ```java
 // say we have a Game object
-RooftopObject game = ...
+RTObject game = ...
 
 // getting the user who created the Game
-RooftopUser createdBy = game.getUser("createdBy");
+RTUser createdBy = game.getUser("createdBy");
 ```
 {: .common-lang-block .java }
 
-<pre><code class="objectivec">
-// say we have a Game object
+<pre><code class="objectivec">// say we have a Game object
 RTObject *game = ...
 
 // getting the user who created the Game
@@ -165,16 +142,6 @@ var user = game.get("createdBy");
 ```
 {: .common-lang-block .js }
 
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
-
 For most scenarios, Pointers will be your best bet for implementing one-to-many relationships.
 
 ### Using Arrays
@@ -189,20 +156,20 @@ Now let's store some `Weapon` objects in the `weaponsList`:
 
 ```java
 // let's say we have four weapons
-RooftopObject scimitar = ...
-RooftopObject plasmaRifle = ...
-RooftopObject grenade = ...
-RooftopObject bunnyRabbit = ...
+RTObject scimitar = ...
+RTObject plasmaRifle = ...
+RTObject grenade = ...
+RTObject bunnyRabbit = ...
 
 // stick the objects in an array
-ArrayList<RooftopObject> weapons = new ArrayList<RooftopObject>();
+ArrayList<RTObject> weapons = new ArrayList<RTObject>();
 weapons.add(scimitar);
 weapons.add(plasmaRifle);
 weapons.add(grenade);
 weapons.add(bunnyRabbit);
 
 // store the weapons for the user
-RooftopUser.getCurrentUser().put("weaponsList", weapons);
+RTUser.getCurrentUser().put("weaponsList", weapons);
 ```
 {: .common-lang-block .java }
 
@@ -331,21 +298,11 @@ var weapons = Rooftop.User.current().get("weaponsList")
 ```
 {: .common-lang-block .js }
 
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
-
 Sometimes, we will want to fetch the "many" objects in our one-to-many relationship at the same time as we fetch the "one" object. One trick we could employ is to use the `includeKey` (or `include` in Android) parameter whenever we use a Rooftop Query to also fetch the array of `Weapon` objects (stored in the `weaponsList` column) along with the Rooftop User object:
 
 ```java
 // set up our query for a User object
-RooftopQuery<RooftopUser> userQuery = RooftopUser.getQuery();
+RTQuery<RTUser> userQuery = RTUser.getQuery();
 
 // configure any constraints on your query...
 // for example, you may want users who are also playing with or against you
@@ -354,8 +311,8 @@ RooftopQuery<RooftopUser> userQuery = RooftopUser.getQuery();
 userQuery.include("weaponsList");
 
 // execute the query
-userQuery.findInBackground(new FindCallback<RooftopUser>() {
-  public void done(List<RooftopUser> userList, RooftopException e) {
+userQuery.findInBackground(new RTFindCallback<RTUser>() {
+  public void done(List<RTUser> userList, RTException e) {
     // userList contains all of the User objects, and their associated Weapon objects, too
   }
 });
@@ -453,16 +410,6 @@ userQuery.find({
 ```
 {: .common-lang-block .js }
 
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
-
 You can also get the "one" side of the one-to-many relationship from the "many" side. For example, if we want to find all Rooftop User objects who also have a given `Weapon`, we can write a constraint for our query like this:
 
 ```java
@@ -519,16 +466,6 @@ userQuery.containedIn("weaponsList", arrayOfWeapons);
 ```
 {: .common-lang-block .js }
 
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
-
 ## Many-to-Many
 
 Now let’s tackle many-to-many relationships. Suppose we had a book reading app and we wanted to model `Book` objects and `Author` objects. As we know, a given author can write many books, and a given book can have multiple authors. This is a many-to-many relationship scenario where you have to choose between Arrays, Rooftop Relations, or creating your own Join Table.
@@ -539,22 +476,20 @@ On the other hand, if you want to attach metadata to the relationship, then crea
 
 ### Using Rooftop Relations
 
-Using Rooftop Relations, we can create a relationship between a `Book` and a few `Author` objects. In the Data Browser, you can create a column on the `Book` object of type relation and name it `authors`.
-
-After that, we can associate a few authors with this book:
+Using Rooftop Relations, we can create a relationship between a `Book` and a few `Author` objects. You can associate a few authors with this book:
 
 ```java
 // let’s say we have a few objects representing Author objects
-RooftopObject authorOne =
-RooftopObject authorTwo =
-RooftopObject authorThree =
+RTObject authorOne =
+RTObject authorTwo =
+RTObject authorThree =
 
 // now we create a book object
-RooftopObject book = new RooftopObject("Book");
+RTObject book = new RTObject("Book");
 
 // now let’s associate the authors with the book
 // remember, we created a "authors" relation on Book
-RooftopRelation<RooftopObject> relation = book.getRelation("authors");
+RTRelation<RTObject> relation = book.getRelation("authors");
 relation.add(authorOne);
 relation.add(authorTwo);
 relation.add(authorThree);
@@ -669,27 +604,17 @@ book.save();
 ```
 {: .common-lang-block .js }
 
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
-
 To get the list of authors who wrote a book, create a query:
 
 ```java
 // suppose we have a book object
-RooftopObject book = ...
+RTObject book = ...
 
 // create a relation based on the authors key
-RooftopRelation relation = book.getRelation("authors");
+RTRelation relation = book.getRelation("authors");
 
 // generate a query based on that relation
-RooftopQuery query = relation.getQuery();
+RTQuery query = relation.getQuery();
 
 // now execute the query
 ```
@@ -779,10 +704,10 @@ Perhaps you even want to get a list of all the books to which an author contribu
 
 ```java
 // suppose we have a author object, for which we want to get all books
-RooftopObject author = ...
+RTObject author = ...
 
 // first we will create a query on the Book object
-RooftopQuery<RooftopObject> query = RooftopQuery.getQuery("Book");
+RTQuery<RTObject> query = RTQuery.getQuery("Book");
 
 // now we will query the authors relation to see if the author object we have
 // is contained therein
@@ -873,11 +798,11 @@ Now, when you want to save the following relationship between two users, create 
 
 ```java
 // suppose we have a user we want to follow
-RooftopUser otherUser = ...
+RTUser otherUser = ...
 
 // create an entry in the Follow table
-RooftopObject follow = new RooftopObject("Follow");
-follow.put("from", RooftopUser.getCurrentUser());
+RTObject follow = new RTObject("Follow");
+follow.put("from", RTUser.getCurrentUser());
 follow.put("to", otherUser);
 follow.put("date", Date());
 follow.saveInBackground();
@@ -948,26 +873,16 @@ follow.save();
 ```
 {: .common-lang-block .js }
 
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
-
 If we want to find all of the people we are following, we can execute a query on the `Follow` table:
 
 ```java
 // set up the query on the Follow table
-RooftopQuery<RooftopObject> query = RooftopQuery.getQuery("Follow");
-query.whereEqualTo("from", RooftopUser.getCurrentUser());
+RTQuery<RTObject> query = RTQuery.getQuery("Follow");
+query.whereEqualTo("from", RTUser.getCurrentUser());
 
 // execute the query
-query.findInBackground(newFindCallback<RooftopObject>() {
-    public void done(List<RooftopObject> followList, RooftopException e) {
+query.findInBackground(new RTFindCallback<RTObject>() {
+    public void done(List<RTObject> followList, RTException e) {
 
     }
 });
@@ -1046,26 +961,16 @@ query.find({
 ```
 {: .common-lang-block .js }
 
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
-
 It’s also pretty easy to find all the users that are following the current user by querying on the `to` key:
 
 ```java
 // set up the query on the Follow table
-RooftopQuery<RooftopObject> query = RooftopQuery.getQuery("Follow");
-query.whereEqualTo("to", RooftopUser.getCurrentUser());
+RTQuery<RTObject> query = RTQuery.getQuery("Follow");
+query.whereEqualTo("to", RTUser.getCurrentUser());
 
 // execute the query
-query.findInBackground(newFindCallback<RooftopObject>() {
-    public void done(List<RooftopObject> followList, RooftopException e) {
+query.findInBackground(new RTFindCallback<RTObject>() {
+    public void done(List<RTObject> followList, RTException e) {
 
     }
 });
@@ -1140,16 +1045,6 @@ query.find({
 ```
 {: .common-lang-block .js }
 
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
-
 ### Using an Array
 
 Arrays are used in Many-to-Many relationships in much the same way that they are for One-to-Many relationships. All objects on one side of the relationship will have an Array column containing several objects on the other side of the relationship.
@@ -1160,10 +1055,10 @@ Here is how we save a relationship between a `Book` and an `Author`.
 
 ```java
 // let's say we have an author
-RooftopObject author = ...
+RTObject author = ...
 
 // and let's also say we have an book
-RooftopObject book = ...
+RTObject book = ...
 
 // add the author to the authors list for the book
 book.put("authors", author);
@@ -1230,29 +1125,19 @@ book.add("authors", author);
 ```
 {: .common-lang-block .js }
 
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
-
 Because the author list is an Array, you should use the `includeKey` (or `include` on Android) parameter when fetching a `Book` so that Rooftop returns all the authors when it also returns the book:
 
 ```java
 // set up our query for the Book object
-RooftopQuery bookQuery = RooftopQuery.getQuery("Book");
+RTQuery bookQuery = RTQuery.getQuery("Book");
 
 // configure any constraints on your query...
 // tell the query to fetch all of the Author objects along with the Book
 bookQuery.include("authors");
 
 // execute the query
-bookQuery.findInBackground(newFindCallback<RooftopObject>() {
-    public void done(List<RooftopObject> bookList, RooftopException e) {
+bookQuery.findInBackground(new RTFindCallback<RTObject>() {
+    public void done(List<RTObject> bookList, RTException e) {
     }
 });
 ```
@@ -1334,20 +1219,10 @@ bookQuery.find({
 ```
 {: .common-lang-block .js }
 
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
-
 At that point, getting all the `Author` objects in a given `Book` is a pretty straightforward call:
 
 ```java
-ArrayList<RooftopObject> authorList = book.getList("authors");
+ArrayList<RTObject> authorList = book.getList("authors");
 ```
 {: .common-lang-block .java }
 
@@ -1390,7 +1265,7 @@ Finally, suppose you have an `Author` and you want to find all the `Book` object
 
 ```java
 // set up our query for the Book object
-RooftopQuery bookQuery = RooftopQuery.getQuery("Book");
+RTQuery bookQuery = RTQuery.getQuery("Book");
 
 // configure any constraints on your query...
 booKQuery.whereEqualTo("authors", author);
@@ -1399,8 +1274,8 @@ booKQuery.whereEqualTo("authors", author);
 bookQuery.include("authors");
 
 // execute the query
-bookQuery.findInBackground(newFindCallback<RooftopObject>() {
-    public void done(List<RooftopObject> bookList, RooftopException e) {
+bookQuery.findInBackground(new RTFindCallback<RTObject>() {
+    public void done(List<RTObject> bookList, RTException e) {
 
     }
 });
@@ -1496,16 +1371,6 @@ bookQuery.find({
 });
 ```
 {: .common-lang-block .js }
-
-```bash
-# No REST API example
-```
-{: .common-lang-block .bash }
-
-```cpp
-// No C++ example
-```
-{: .common-lang-block .cpp }
 
 ## One-to-One
 

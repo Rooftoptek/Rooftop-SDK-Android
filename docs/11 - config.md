@@ -7,7 +7,7 @@
 After that you will be able to fetch the `RTConfig` on the client, like in this example:
 
 ```java
-RTConfig.getInBackground(new ConfigCallback() {
+RTConfig.getInBackground(new RTConfigCallback() {
   @Override
   public void done(RTConfig config, RTException e) {
     int number = config.getInt("winningNumber");
@@ -22,7 +22,7 @@ RTConfig.getInBackground(new ConfigCallback() {
 
 ```java
 Log.d("TAG", "Getting the latest config...");
-RTConfig.getInBackground(new ConfigCallback() {
+RTConfig.getInBackground(new RTConfigCallback() {
   @Override
   public void done(RTConfig config, RTException e) {
     if (e == null) {
