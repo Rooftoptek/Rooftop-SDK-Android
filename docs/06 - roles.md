@@ -12,31 +12,27 @@ We provide a specialized class called `RTRole` that represents these role object
 
 *   **name**: The name for the role. This value is required, and can only be set once as a role is being created. The name must consist of alphanumeric characters, spaces, -, or _.  This name will be used to identify the Role without needing its objectId.
 *   **users**: A [relation](#objects-pointers) to the set of users that will inherit permissions granted to the containing role.
-*   **roles**: A [relation](#objects-pointers) to the set of roles whose users and roles will inherit permissions granted to the containing role.
 
 ## Security for Role Objects
 
-The `RTRole` uses the same security scheme (ACLs) as all other objects on Rooftop, except that it requires an ACL to be set explicitly. Generally, only users with greatly elevated privileges (e.g. a master user or Administrator) should be able to create or modify a Role, so you should define its ACLs accordingly.  Remember, if you give write-access to a `RTRole` to a user, that user can add other users to the role, or even delete the role altogether.
+The `RTRole` uses the same security scheme (ACLs) as all other objects on Rooftop, except that it requires an ACL to be set explicitly. Generally, only users with greatly elevated privileges (e.g. a master user or Administrator) should be able to create or modify a Role, so you should define its ACLs accordingly.  Remember, if you give update-access to a `RTRole` to a user, that user can add other users to the role, or even delete the role altogether.
 
 To create a new `RTRole`, you would write:
 
 ```java
 // By specifying no write privileges for the ACL, we can ensure the role cannot be altered.
 RTACL roleACL = new RTACL();
-roleACL.setPublicReadAccess(true);
+roleACL.setPublicAccess(RTACL.READ_FLAG);
 RTRole role = new RTRole("Administrator", roleACL);
 role.saveInBackground();
 ```
 
-You can add users and roles that should inherit your new role's permissions through the "users" and "roles" relations on `RTRole`:
+You can add users that should inherit your new role's permissions through the "users" relations on `RTRole`:
 
 ```java
 RTRole role = new RTRole(roleName, roleACL);
 for (RTUser user : usersToAddToRole) {
   role.getUsers().add(user)
-}
-for (RTRole childRole : rolesToAddToRole) {
-  role.getRoles().add(childRole);
 }
 role.saveInBackground();
 ```
@@ -47,13 +43,13 @@ Take great care when assigning ACLs to your roles so that they can only be modif
 
 Now that you have created a set of roles for use in your application, you can use them with ACLs to define the privileges that their users will receive. Each `RTObject` can specify a `RTACL`, which provides an access control list that indicates which users and roles should be granted read or write access to the object.
 
-Giving a role read or write permission to an object is straightforward.  You can either use the `RTRole`:
+Giving a role read, update or delete permission to an object is straightforward. You can either use the `RTRole`:
 
 ```java
 RTRole moderators = /* Query for some RTRole */;
 RTObject wallPost = new RTObject("WallPost");
 RTACL postACL = new RTACL();
-postACL.setRoleWriteAccess(moderators);
+postACL.setRoleAccess(moderators, RTACL.UPDATE_FLAG);
 wallPost.setACL(postACL);
 wallPost.saveInBackground();
 ```
@@ -63,7 +59,7 @@ You can avoid querying for a role by specifying its name for the ACL:
 ```java
 RTObject wallPost = new RTObject("WallPost");
 RTACL postACL = new RTACL();
-postACL.setRoleWriteAccess("Moderators", true);
+postACL.setRoleAccess("Moderators", RTACL.READ_FLAG | RTACL.UPDATE_FLAG);
 wallPost.setACL(postACL);
 wallPost.save();
 ```
@@ -73,22 +69,10 @@ Role-based `RTACL`s can also be used when specifying default ACLs for your appli
 ```java
 RTACL defaultACL = new RTACL();
 // Everybody can read objects created by this user
-defaultACL.setPublicReadAccess(true);
+defaultACL.setPublicAccess(RTACL.READ_FLAG);
 // Moderators can also modify these objects
-defaultACL.setRoleWriteAccess("Moderators");
+defaultACL.setRoleAccess("Moderators", RTACL.READ_FLAG | RTACL.UPDATE_FLAG);
 // And the user can read and modify its own objects
 RTACL.setDefaultACL(defaultACL, true);
 ```
 
-## Role Hierarchy
-
-As described above, one role can contain another, establishing a parent-child relationship between the two roles. The consequence of this relationship is that any permission granted to the parent role is implicitly granted to all of its child roles.
-
-These types of relationships are commonly found in applications with user-managed content, such as forums. Some small subset of users are "Administrators", with the highest level of access to tweaking the application's settings, creating new forums, setting global messages, and so on. Another set of users are "Moderators", who are responsible for ensuring that the content created by users remains appropriate. Any user with Administrator privileges should also be granted the permissions of any Moderator. To establish this relationship, you would make your "Administrators" role a child role of "Moderators", like this:
-
-```java
-RTRole administrators = /* Your "Administrators" role */;
-RTRole moderators = /* Your "Moderators" role */;
-moderators.getRoles().add(administrators);
-moderators.saveInBackground();
-```
