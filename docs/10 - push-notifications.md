@@ -36,13 +36,15 @@ If you want to register your app with multiple additional sender IDs, then the `
 
 ## Installations
 
-Every Rooftop application installed on a device registered for push notifications has an associated `Installation` object. The `Installation` object is where you store all the data needed to target push notifications. For example, in a baseball app, you could store the teams a user is interested in to send updates about their performance. Saving the `Installation` object is also required for tracking push-related app open events.
+Every Rooftop application installed on a device registered for push notifications has an associated `RTInstallation` object. The `RTInstallation` object is where you store all the data needed to target push notifications. For example, in a baseball app, you could store the teams a user is interested in to send updates about their performance. Saving the `RTInstallation` object is also required for tracking push-related app open events.
 
-In Android, `Installation` objects are available through the `RTInstallation` class, a subclass of `RTObject`. It uses the [same API](#objects) for storing and retrieving data. To access the current `Installation` object from your Android app, use the `RTInstallation.getCurrentInstallation()` method. The first time you save a `RTInstallation`, Rooftop will add it to your `Installation` class and it will be available for targeting push notifications.
+In Android, `RTInstallation` objects are available through the `RTInstallation` class, a subclass of `RTObject`. It uses the [same API](Objects) for storing and retrieving data. To access the current `RTInstallation` object from your Android app, use the `RTInstallation.getCurrentInstallation()` method. The first time you save a `RTInstallation`, Rooftop will add it to your `RTInstallation` class and it will be available for targeting push notifications.
 
 ```java
 // Save the current Installation to Rooftop.
-RTInstallation.getCurrentInstallation().saveInBackground();
+RTInstallation installation = RTInstallation.getCurrentInstallation();
+installation.setACL([your RTACL]);
+installation.saveInBackground();
 ```
 
 While it is possible to modify a `RTInstallation` just like you would a `RTObject`, there are several special fields that help manage and target devices.
@@ -79,7 +81,8 @@ Now that your app is all set up to receive push notifications, you can start cus
 The [Android style guide](https://www.google.com/design/spec/style/icons.html#notification) recommends apps use a push icon that is monochromatic and flat. The default push icon is your application's launcher icon, which is unlikely to conform to the style guide. To provide a custom push icon, add the following metadata tag to your app's `AndroidManifest.xml`:
 
 ```java
-<meta-data android:name="io.rftp.push.notification_icon" android:resource="@drawable/push_icon"/>
+<meta-data android:name="io.rftp.push.notification_icon" 
+		   android:resource="@drawable/push_icon"/>
 ```
 
 ...where `push_icon` is the name of a drawable resource in your package. If your application needs more than one small icon, you can override `getSmallIconId` in your `RTPushBroadcastReceiver` subclass.
