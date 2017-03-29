@@ -258,9 +258,9 @@ query.whereEqualTo("gender", "female");
 query.findInBackground(new RTFindCallback<RTUser>() {
   public void done(List<RTUser> objects, RTException e) {
     if (e == null) {
-        // The query was successful.
+      // The query was successful.
     } else {
-        // Something went wrong.
+      // Something went wrong.
     }
   }
 });
