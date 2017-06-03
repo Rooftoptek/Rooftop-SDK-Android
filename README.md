@@ -169,6 +169,32 @@ if (file.getUrl() != null) {
 }
 ```
 
+System can emit LOGOUT event in case login provider cannot update current session. To handle this case use default BroadcastReciever or set custom one:
+
+Default:
+
+```java
+RTUser.registerLogoutBroadcastReceiver(this, new RTLogoutBroadcastReceiver.OnLogout() {
+  @Override
+  public void onLogout(Context context) {
+    //your logic
+  }
+});
+```
+
+Custom:
+
+```java
+RTUser.registerLogoutBroadcastReceiver(this, new RTLogoutBroadcastReceiver() {
+  @Override
+  public void onReceive(Context context, Intent intent) {
+    //your logic
+  }
+});
+```
+
+Recomended to settup it in your Application class in onCreate() method.
+
 ## PUSH Notifications
 
 For handle PUSH Notifications use the next tips. 
